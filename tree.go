@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"slices"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Node struct {
@@ -25,9 +27,56 @@ func (node *Node) display() {
 	fmt.Println("===")
 }
 
+func (tree *Tree) get_max_depth(current_node Node, depth int) int {
+	if current_node == (Node{}) {
+		return depth
+	}
+
+	depth += 1
+
+	return int(math.Max(float64(tree.get_max_depth(*current_node.Left, depth)),
+		float64(tree.get_max_depth(*current_node.Right, depth))))
+
+}
+
 func (tree *Tree) display() {
 
-	tree.Root.display()
+	max_depth := tree.get_max_depth(*tree.Root, 1)
+
+	tree.Root.show_nodes_r(800, 0, max_depth, 0)
+
+}
+
+func (node *Node) show_nodes_r(x, y float64, max_depth, current_depth int) {
+
+	// show self
+	pos := rl.Vector2{X: float32(x), Y: float32(y)}
+	size := rl.Vector2{X: 50, Y: 50}
+
+	sep := 20.0
+	this_sep := sep * math.Pow(2.0, float64((max_depth-current_depth-1)))
+
+	rl.DrawRectangleV(pos, size, rl.Black)
+
+	// if left and right exist, show them too
+	if node.Left != nil {
+
+		rl.DrawLineV(rl.Vector2Add(rl.Vector2Scale(size, 0.5), pos),
+			rl.Vector2Add(rl.Vector2Scale(size, 0.5), rl.Vector2{
+				X: float32(x - this_sep),
+				Y: float32(y + 100)}),
+			rl.Black)
+		node.Left.show_nodes_r(x-this_sep, y+100, max_depth, current_depth+1)
+	}
+	if node.Right != nil {
+		rl.DrawLineV(rl.Vector2Add(rl.Vector2Scale(size, 0.5), pos),
+			rl.Vector2Add(rl.Vector2Scale(size, 0.5), rl.Vector2{
+				X: float32(x + this_sep),
+				Y: float32(y + 100)}),
+			rl.Black)
+
+		node.Right.show_nodes_r(x+this_sep, y+100, max_depth, current_depth+1)
+	}
 
 }
 
@@ -61,7 +110,7 @@ func branch_node(columns []string, csv_data map[string][]float64) *Node {
 	Nitems := len(csv_data["target"])
 
 	fmt.Printf("Found only %v items\n", Nitems)
-	if Nitems < 200 {
+	if Nitems < 300 {
 		return &Node{val: 0.0}
 	}
 
